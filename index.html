@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1457d9"><link rel="manifest" href="manifest.webmanifest">
+<title>Chamaê — Achou. Chamou. Resolveu.</title>
+<style>
+:root{--blue:#1457d9;--dark:#12315e;--bg:#f4f7fc;--line:#e2e9f3}*{box-sizing:border-box}
+body{margin:0;font:16px system-ui,Arial;background:var(--bg);color:#17243a}header{background:linear-gradient(120deg,#1247bd,#2588f5);color:white;padding:25px 18px 30px;border-radius:0 0 24px 24px}
+.wrap{max-width:760px;margin:auto;padding:0 16px}h1{margin:0;font-size:30px}header p{margin:5px 0 18px;opacity:.95}.search{width:100%;padding:14px;border:0;border-radius:12px;font-size:16px}
+main{padding:18px 0 40px}.section{margin:20px 0}.section h2{font-size:19px;margin:0 0 12px}.chips{display:flex;gap:8px;flex-wrap:wrap}.chip,button{border:0;border-radius:10px;padding:10px 13px;background:#e6efff;color:var(--dark);font-weight:650;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}.card{background:white;border:1px solid var(--line);border-radius:15px;padding:14px;box-shadow:0 3px 12px #173b7010}.emoji{font-size:25px}.card h3{margin:7px 0 4px;font-size:16px}.muted{color:#66758c;font-size:13px}.price{font-weight:750;color:var(--blue);margin-top:8px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.primary{background:var(--blue);color:white}.secondary{background:#edf2f9;color:#243a5c}
+form{display:grid;gap:10px}input,select,textarea{width:100%;padding:12px;border:1px solid #ccd7e6;border-radius:10px;font:inherit;background:white}label{font-size:13px;font-weight:700;color:#465772}
+.notice{background:#fff8df;border:1px solid #f0df9b;padding:12px;border-radius:12px;font-size:13px;color:#66531a}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}footer{text-align:center;color:#78869a;font-size:12px;padding:20px}
+</style></head>
+<body>
+<header><div class="wrap"><h1>Chamaê <span aria-hidden="true">📍</span></h1><p>Achou. Chamou. Resolveu.</p><input id="search" class="search" placeholder="O que você precisa hoje? Ex.: mecânico, encanador..."></div></header>
+<main class="wrap">
+<nav><button class="primary" onclick="show('buscar')">Buscar serviços</button><button onclick="show('anunciar')">Oferecer serviço</button><button onclick="show('pedidos')">Meus pedidos</button></nav>
+<section id="buscar">
+<div class="section"><h2>Encontre um profissional</h2><div class="chips" id="categories"></div></div>
+<div class="section"><h2>Serviços disponíveis</h2><div class="grid" id="listings"></div></div>
+</section>
+<section id="anunciar" hidden><div class="section"><h2>Cadastre seu serviço</h2><p class="muted">Conte às pessoas o que você oferece.</p>
+<form id="listingForm"><label>Nome do serviço<input name="name" required placeholder="Ex.: Conserto de pneus"></label><label>Categoria<select name="category"><option>Automotivo</option><option>Casa e manutenção</option><option>Beleza</option><option>Limpeza</option><option>Informática</option><option>Outros</option></select></label><label>Seu nome ou negócio<input name="provider" required placeholder="Ex.: João"></label><label>WhatsApp (com DDD)<input name="phone" placeholder="Ex.: 47999999999"></label><label>Descrição<textarea name="description" rows="3" placeholder="Explique o que você faz"></textarea></label><label>Preço inicial (R$)<input name="price" type="number" min="0" step="0.01" placeholder="A combinar"></label><button class="primary" type="submit">Publicar serviço</button></form></div></section>
+<section id="pedidos" hidden><div class="section"><h2>Meus pedidos</h2><div id="orders" class="grid"></div></div></section>
+<div class="notice">Protótipo inicial do Chamaê. Os anúncios e pedidos ficam salvos somente neste navegador e aparelho. Ainda não há contas compartilhadas, pagamentos ou pedidos reais entre usuários.</div>
+</main><footer>Chamaê • Brusque e região</footer>
+<script>
+const defaults=[
+{name:"Socorro com pneus",category:"Automotivo",provider:"Exemplo de prestador",description:"Atendimento móvel para pneus. Confirme disponibilidade.",price:"A combinar"},
+{name:"Pequenos reparos",category:"Casa e manutenção",provider:"Exemplo de prestador",description:"Serviços gerais e manutenção residencial.",price:"A combinar"},
+{name:"Limpeza residencial",category:"Limpeza",provider:"Exemplo de prestador",description:"Limpeza por diária ou orçamento.",price:"A combinar"}
+];
+let listings=JSON.parse(localStorage.getItem("chamae_listings")||"null")||defaults;
+let orders=JSON.parse(localStorage.getItem("chamae_orders")||"[]");
+let active="Todas";
+const cats=["Todas","Automotivo","Casa e manutenção","Beleza","Limpeza","Informática","Outros"];
+function save(){localStorage.setItem("chamae_listings",JSON.stringify(listings));localStorage.setItem("chamae_orders",JSON.stringify(orders))}
+function show(id){["buscar","anunciar","pedidos"].forEach(x=>document.getElementById(x).hidden=x!==id)}
+function renderCats(){document.getElementById("categories").innerHTML=cats.map(c=>`<button class="chip" onclick="active='${c}';render()">${c}</button>`).join("")}
+function render(){let q=document.getElementById("search").value.toLowerCase();let items=listings.filter(x=>(active==="Todas"||x.category===active)&&[x.name,x.category,x.provider,x.description].join(" ").toLowerCase().includes(q));document.getElementById("listings").innerHTML=items.length?items.map((x,i)=>`<article class="card"><div class="emoji">🛠️</div><h3>${esc(x.name)}</h3><div class="muted">${esc(x.category)} • ${esc(x.provider)}</div><p>${esc(x.description||"Consulte detalhes com o prestador.")}</p><div class="price">${x.price?("A partir de R$ "+esc(x.price)):"Preço a combinar"}</div><div class="actions"><button class="primary" onclick="requestService(${listings.indexOf(x)})">Solicitar</button></div></article>`).join(""):'<p class="muted">Nenhum serviço encontrado. Tente outra busca.</p>';renderOrders()}
+function renderOrders(){document.getElementById("orders").innerHTML=orders.length?orders.map(o=>`<article class="card"><h3>${esc(o.name)}</h3><p class="muted">Solicitação registrada neste aparelho.</p></article>`).join(""):'<p class="muted">Você ainda não fez pedidos.</p>'}
+function requestService(i){let x=listings[i];orders.unshift({name:x.name});save();alert("Pedido de demonstração registrado neste aparelho.");renderOrders()}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+document.getElementById("listingForm").addEventListener("submit",e=>{e.preventDefault();let d=Object.fromEntries(new FormData(e.target));listings.unshift(d);save();e.target.reset();active="Todas";render();show("buscar");alert("Serviço salvo neste aparelho!")});
+document.getElementById("search").addEventListener("input",render);
+renderCats();render();
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+</script></body></html>
